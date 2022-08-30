@@ -1,10 +1,11 @@
-class NullAdjuster(object):
-    def __init__(self):
-        self.name = None
-        pass
+from typing import Literal
+from pydantic import constr
+from distrib_rl.experiments.config_adjusters.model import BaseAdjusterConfig
 
-    def init(self, adjustment_json, cfg):
-        self.name = adjustment_json["name"]
+
+class NullAdjuster(object):
+    def __init__(self, adjustment_config: "NullAdjusterConfig", cfg):
+        self.name = adjustment_config.name
 
     def step(self):
         return False
@@ -26,3 +27,9 @@ class NullAdjuster(object):
 
     def reset_per_increment(self):
         return False
+
+
+class NullAdjusterConfig(BaseAdjusterConfig[NullAdjuster]):
+    _adjustor_type = NullAdjuster
+    type: Literal["null"]
+    name: constr(min_length=1)

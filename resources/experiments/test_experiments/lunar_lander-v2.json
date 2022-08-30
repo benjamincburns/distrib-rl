@@ -4,13 +4,12 @@
   "num_trials_per_adjustment" : 5,
   "steps_per_save" : 50,
 
-  "config_adjustments": {
-    "parallel_adjustment_1": {
-      "null_adjustment_1": {
-        "name": "null_adjustment"
-      }
+  "config_adjustments": [
+    {
+      "type": "null",
+      "name": "null_adjustment"
     }
-  },
+  ],
   "terminal_conditions": {
     "policy_reward" : 200,
     "max_timesteps": 1e7

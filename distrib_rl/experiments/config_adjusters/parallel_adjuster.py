@@ -1,26 +1,21 @@
-from distrib_rl.experiments.config_adjusters import Adjuster, NullAdjuster
-from distrib_rl.experiments.config_adjusters import Adjustment
-from distrib_rl.experiments.config_adjusters import ListAdjuster
+from distrib_rl.experiments.config_adjusters import (
+    Adjuster,
+    ListAdjusterConfig,
+    BasicAdjusterConfig,
+)
+from distrib_rl.experiments.config_adjusters.model import BaseAdjusterConfig
+
+from typing_extensions import Annotated
+from typing import Union, Literal
+from pydantic import Field
 
 
 class ParallelAdjuster(Adjuster):
-    def __init__(self):
+    def __init__(self, adjustment_config: "ParallelAdjusterConfig", cfg):
         super().__init__()
-
-    def init(self, adjustments_json, cfg):
-        for key, item in adjustments_json.items():
-            if "list_" in key:
-                adjustment = ListAdjuster()
-                adjustment.init(item, cfg)
-                self.adjustments.append(adjustment)
-            elif "null_" in key:
-                adjustment = NullAdjuster()
-                adjustment.init(item, cfg)
-                self.adjustments.append(adjustment)
-            elif "adjustment_" in key:
-                adjustment = Adjustment()
-                adjustment.init(item, cfg)
-                self.adjustments.append(adjustment)
+        for adjuster_config in adjuster_config.adjusters:
+            adjustment = adjuster_config.to_adjuster(cfg)
+            self.adjustments.append(adjustment)
 
     def step(self):
         done = True
@@ -40,3 +35,15 @@ class ParallelAdjuster(Adjuster):
                 reset_this_increment = True
 
         return reset_this_increment
+
+
+ParallelAdjustable = Annotated[
+    Union[ListAdjusterConfig, BasicAdjusterConfig],
+    Field(discriminator="type"),
+]
+
+
+class ParallelAdjusterConfig(BaseAdjusterConfig[ParallelAdjuster]):
+    _adjustor_type = ParallelAdjuster
+    type: Literal["parallel"]
+    adjusters: list[ParallelAdjustable]

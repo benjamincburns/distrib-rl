@@ -16,8 +16,8 @@ class ExperimentManager(object):
         self.optimization_manager.cleanup()
 
     def load_experiment(self, filepath):
-        experiment_json = experiment_loader.load_experiment(file_path=filepath)
-        experiment = Experiment(experiment_json, self.optimization_manager)
+        experiment_config = experiment_loader.load_experiment(file_path=filepath)
+        experiment = Experiment(experiment_config, self.optimization_manager)
         self.experiments.append(experiment)
 
     def load_experiments(self, folder_path):

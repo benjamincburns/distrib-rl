@@ -1,22 +1,15 @@
 import operator
 from functools import reduce
+from typing import Literal, Union
+
+from distrib_rl.experiments.config_adjusters.model import BaseAdjusterConfig
 
 
 class ListAdjuster(object):
-    def __init__(self):
-        self.reset_per_increment = False
-        self.keys = []
-        self.begin = None
-        self.end = None
-
-        self.value_idx = None
-        self.current_adjusted_value = None
-        self.original_cfg_value = None
-
-    def init(self, adjustment_json, cfg):
-        self.keys = adjustment_json["key_set"]
-        self.values = adjustment_json["values"]
-        self.reset_per_increment = adjustment_json["full_reset_per_increment"]
+    def __init__(self, adjustment_config: "ListAdjusterConfig", cfg):
+        self.keys = adjustment_config.key_set
+        self.values = adjustment_config.values
+        self.reset_per_increment = adjustment_config.full_reset_per_increment
 
         cfg_entry = reduce(operator.getitem, self.keys[:-1], cfg)
         self.original_cfg_value = cfg_entry[self.keys[-1]]
@@ -77,3 +70,15 @@ class ListAdjuster(object):
 
     def is_done(self):
         return self.value_idx >= len(self.values) - 1
+
+
+class ListAdjusterConfig(BaseAdjusterConfig[ListAdjuster]):
+    _adjustor_type = ListAdjuster
+    type: Literal["list"]
+    key_set: list[str]
+
+    # would be really nice if I could tell pydantic to infer the type of this
+    # list from the type of the field being mutated
+    values: list[Union[dict, float, int, str]]
+
+    full_reset_per_increment: bool = False

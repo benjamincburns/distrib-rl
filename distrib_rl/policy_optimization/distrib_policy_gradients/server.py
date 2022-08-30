@@ -3,6 +3,7 @@ from distrib_rl.marl import OpponentSelector
 from distrib_rl.distrib import RedisServer, redis_keys
 from distrib_rl.utils import config_loader
 from distrib_rl.experience import ParallelExperienceManager
+from distrib_rl.experiments.model import TerminalConditionsConfig
 import time
 import numpy as np
 import wandb
@@ -173,30 +174,30 @@ class Server(object):
         print("SETTING BASE DIR", directory)
         self.base_directory = directory
 
-    def set_terminal_conditions(self, conditions):
+    def set_terminal_conditions(self, conditions: TerminalConditionsConfig):
         self.terminal_conditions = conditions
 
     def is_done(self):
         if (
-            "max_epoch" in self.terminal_conditions
-            and self.terminal_conditions["max_epoch"] > 0
+            self.terminal_conditions.max_epoch is not None
+            and self.terminal_conditions.max_epoch > 0
+            and self.epoch >= self.terminal_conditions.max_epoch
         ):
-            if self.epoch >= self.terminal_conditions["max_epoch"]:
-                return True
+            return True
 
         if (
-            "max_timesteps" in self.terminal_conditions
-            and self.terminal_conditions["max_timesteps"] > 0
+            self.terminal_conditions.max_timesteps is not None
+            and self.terminal_conditions.max_timesteps > 0
+            and self.cumulative_ts >= self.terminal_conditions.max_timesteps
         ):
-            if self.cumulative_ts >= self.terminal_conditions["max_timesteps"]:
-                return True
+            return True
 
         if (
-            "policy_reward" in self.terminal_conditions
-            and self.terminal_conditions["policy_reward"] > 0
+            self.terminal_conditions.policy_reward is not None
+            and self.terminal_conditions.policy_reward > 0
+            and self.policy_reward >= self.terminal_conditions.policy_reward
         ):
-            if self.policy_reward >= self.terminal_conditions["policy_reward"]:
-                return True
+            return True
 
         return False
 

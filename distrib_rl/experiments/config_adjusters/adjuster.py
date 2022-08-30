@@ -5,9 +5,6 @@ class Adjuster(object):
     def __init__(self):
         self.adjustments = []
 
-    def init(self, adjustments_json, cfg):
-        raise NotImplementedError
-
     def step(self):
         raise NotImplementedError
 

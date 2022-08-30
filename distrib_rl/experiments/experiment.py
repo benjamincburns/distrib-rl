@@ -1,12 +1,12 @@
+from distrib_rl.experiments.model import ExperimentConfig
 from distrib_rl.utils import config_loader
-from distrib_rl.experiments.config_adjusters import adjuster_factory
 import os
 import numpy as np
 
 
 class Experiment(object):
-    def __init__(self, experiment_json, optimization_manager):
-        self.experiment_json = experiment_json
+    def __init__(self, experiment_config: ExperimentConfig, optimization_manager):
+        self.experiment_config = experiment_config
 
         self.config_adjusters = None
         self.optimization_manager = optimization_manager
@@ -14,25 +14,26 @@ class Experiment(object):
 
         self.current_adjuster_index = 0
 
-        self.num_trials = experiment_json["num_trials_per_adjustment"]
-        self.terminal_conditions = experiment_json["terminal_conditions"]
+        self.num_trials = experiment_config.num_trials_per_adjustment
+        self.terminal_conditions = experiment_config.terminal_conditions
 
         self.current_trial = 0
 
         self.base_dir = os.path.join(os.getcwd(), "data", "experiments")
-        self.experiment_name = experiment_json["experiment_name"]
+        self.experiment_name = experiment_config.experiment_name
         self.adjustment_dir = ""
 
         self.step_num = 0
 
     def init(self):
         self.cfg = config_loader.load_config(
-            file_name=self.experiment_json["config_file"]
+            file_name=self.experiment_config.config_file
         )
 
-        self.config_adjusters = adjuster_factory.build_adjusters_for_experiment(
-            self.experiment_json["config_adjustments"], self.cfg
-        )
+        self.config_adjusters = [
+            conf.to_adjuster(self.cfg)
+            for conf in self.experiment_config.config_adjustments
+        ]
 
         self.config_adjusters[self.current_adjuster_index].reset_config(self.cfg)
         self.config_adjusters[self.current_adjuster_index].adjust_config(self.cfg)
@@ -48,7 +49,7 @@ class Experiment(object):
         self.optimization_manager.step()
         self.step_num += 1
 
-        if self.step_num % self.experiment_json["steps_per_save"] == 0:
+        if self.step_num % self.experiment_config.steps_per_save == 0:
             self.optimization_manager.save_progress()
 
         if self.optimization_manager.is_done():
@@ -104,13 +105,13 @@ class Experiment(object):
     def start_trial(self):
         current_trial_dir = os.path.join(
             self.base_dir,
-            self.experiment_json["experiment_name"],
+            self.experiment_config.experiment_name,
             self.adjustment_dir,
             str(self.current_trial),
         )
 
         experiment_name = "{}-{}-{}".format(
-            self.experiment_json["experiment_name"],
+            self.experiment_config.experiment_name,
             self.adjustment_dir,
             self.current_trial,
         )

@@ -31,6 +31,7 @@ setup(
         "torch==1.12.1",
         "trueskill==0.4.5",
         "wandb==0.13.1",
+        "pydantic==1.9.2"
     ],
     python_requires=">=3.7",
     license="Apache 2.0",

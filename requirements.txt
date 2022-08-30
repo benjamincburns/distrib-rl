@@ -16,3 +16,4 @@ torch==1.12.1
 
 trueskill==0.4.5
 wandb==0.13.1
+pydantic==1.9.2
