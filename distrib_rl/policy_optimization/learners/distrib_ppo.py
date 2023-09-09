@@ -73,7 +73,7 @@ class DistribPPO(object):
 
         batches = exp.get_all_batches_shuffled()
 
-        t1 = time.time()
+        t1 = time.perf_counter()
         for batch in batches:
             acts, old_probs, obs, target_values, advantages = batch
 
@@ -149,8 +149,9 @@ class DistribPPO(object):
 
         self.n_epochs += 1
         self.cumulative_model_updates += n_updates
+        t2 = time.perf_counter()
         report = {
-            "batch_time": (time.time() - t1) / n_iterations,
+            "batch_time": (t2 - t1) / n_iterations,
             "n_batches": n_iterations,
             "n_updates": n_updates,
             "cumulative_model_updates": self.cumulative_model_updates,
@@ -160,5 +161,7 @@ class DistribPPO(object):
             "clip_fraction": mean_clip,
             "learning_rate": lr_report,
         }
+
+        print(f"update_time: {t2 - t1}")
 
         return report

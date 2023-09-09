@@ -13,9 +13,9 @@ class ClientTrajectoryFinalizer(Process):
     HEADER_FLUSH = "flush_data"
     HEADER_TRAJECTORY = "trajectory"
 
-    def __init__(self, loop_wait_period=0.1):
+    def __init__(self, loop_wait_period=0.01):
         super().__init__(
-            "ClientTrajectoryFinalizer", loop_wait_period=0.1, process_all_updates=True
+            "ClientTrajectoryFinalizer", loop_wait_period=loop_wait_period, process_all_updates=True
         )
         self.client = None
         self.cfg = None
@@ -108,6 +108,7 @@ class ClientTrajectoryFinalizer(Process):
                 # send, as it's not blocking the game
                 seconds = t1 - self.t0
                 steps_per_second = float(self.total_timesteps) / seconds
+                self.t0 = time.perf_counter()
 
                 if rewards:
                     self.client.push_data(redis_keys.CLIENT_POLICY_REWARD_KEY, rewards)
@@ -134,13 +135,15 @@ class ClientTrajectoryFinalizer(Process):
 
         self.total_timesteps = 0
         self.trajectories_to_send = []
-        self.t0 = time.perf_counter()
         print("")
 
     @torch.no_grad()
     def _trajectory(self, trajectory):
         if self.t0 is None:
             self.t0 = time.perf_counter()
+
+        if trajectory.zero_reward:
+            return
 
         values = (
             self.value_estimator.get_output(
