@@ -4,3 +4,4 @@ from .trajectory import Trajectory
 from .experience_replay import ExperienceReplay
 from .distrib_experience_manager import DistribExperienceManager
 from .parallel_experience_manager import ParallelExperienceManager
+from .shuffling_experience_manager import ShufflingExperienceManager

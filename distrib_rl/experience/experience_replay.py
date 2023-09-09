@@ -1,6 +1,7 @@
 from distrib_rl.experience import Trajectory
 import torch
 import numpy as np
+import time
 
 from distrib_rl.utils import WelfordRunningStat
 
@@ -28,6 +29,7 @@ class ExperienceReplay(object):
         self.time = 0
 
     def register_trajectory(self, trajectory: Trajectory, serialized=False):
+        times = [ ("start", time.perf_counter()) ]
         if not serialized:
             (
                 actions,
@@ -57,32 +59,77 @@ class ExperienceReplay(object):
                 noise_idx,
             ) = trajectory
 
+        times.append(("serialize", time.perf_counter()))
+
         self.reward_stats.increment(future_rewards, len(future_rewards))
+
+        times.append(("inc reward stats", time.perf_counter()))
+
         self.actions = torch.cat(
             (self.actions, torch.as_tensor(actions,dtype=torch.float32)), 0
         )
+
+        times.append(("concatenate actions", time.perf_counter()))
+
         self.log_probs = torch.cat(
             (self.log_probs, torch.as_tensor(log_probs, dtype=torch.float32)), 0
         )
+
+        times.append(("concatenate log probs", time.perf_counter()))
+
         self.obs = torch.cat((self.obs, torch.as_tensor(obs, dtype=torch.float32)), 0)
+
+        times.append(("concatenate obs", time.perf_counter()))
+
         self.values = torch.cat(
             (self.values, torch.as_tensor(values, dtype=torch.float32)), 0
         )
+        times.append(("concatenate values", time.perf_counter()))
+
         self.advantages = torch.cat(
             (self.advantages, torch.as_tensor(advantages, dtype=torch.float32)), 0
         )
+
+        times.append(("concatenate advantages", time.perf_counter()))
+
         self.noise_idxs = torch.cat(
             (self.noise_idxs, torch.as_tensor(noise_idx, dtype=torch.float32)), 0
         )
+
+        times.append(("concatenate noise indexes", time.perf_counter()))
+
         self.ep_rews = torch.cat(
             (self.ep_rews, torch.as_tensor(ep_rew, dtype=torch.float32)), 0
         )
+
+        times.append(("concatenate rewards", time.perf_counter()))
+
         self._clamp_size()
+        times.append(("clamp size", time.perf_counter()))
+
         self.num_timesteps = len(self.actions)
 
+        prev_time = times[0][1]
+        for i, t in enumerate(times):
+            if i == 0:
+                continue
+            print(f"register_trajectory, {t[0]}: {t[1]-prev_time}")
+            prev_time = t[1]
+
     def get_all_batches_shuffled(self, batch_size):
+        times = [("start", time.perf_counter())]
         if batch_size == self.num_timesteps:
-            return self.get_all_batches(batch_size)
+            batches = self.get_all_batches(batch_size)
+
+            times.append(("batching time", time.perf_counter()))
+
+            prev_time = times[0][1]
+            for i, t in enumerate(times):
+                if i == 0:
+                    continue
+                print(f"ExperienceReplay.get_all_batches_shuffled (batch_size == num_timesteps), {t[0]}: {t[1]-prev_time}")
+                prev_time = t[1]
+            return batches
 
         indices = [i for i in range(self.num_timesteps)]
         self.rng.shuffle(indices)
@@ -108,22 +155,13 @@ class ExperienceReplay(object):
         batches = []
         n = len(acts) // batch_size
 
-        # max_idx = self.num_timesteps - batch_size
-        # indices = self.rng.randint(0, max_idx, n)
-        # self.cfg["rng"].shuffle(indices)
+        max_idx = self.num_timesteps - batch_size
+        indices = self.rng.randint(0, max_idx, n)
+        self.cfg["rng"].shuffle(indices)
 
         for i in range(n):
-            # batch = Trajectory()
             start = i * batch_size
             stop = start + batch_size
-
-            # batch.actions = acts[start:stop]
-            # batch.log_probs = probs[start:stop]
-            # batch.obs = obs[start:stop]
-            # batch.values = vals[start:stop]
-            # batch.advantages = adv[start:stop]
-
-            # batches.append(batch)
 
             batches.append(
                 [
@@ -134,6 +172,14 @@ class ExperienceReplay(object):
                     adv[start:stop],
                 ]
             )
+
+        times.append(("shuffling time", time.perf_counter()))
+        prev_time = times[0][1]
+        for i, t in enumerate(times):
+            if i == 0:
+                continue
+            print(f"ExperienceReplay.get_all_batches_shuffled, {t[0]}: {t[1]-prev_time}")
+            prev_time = t[1]
 
         return batches
 
@@ -228,19 +274,19 @@ class ExperienceReplay(object):
             self.pred_rets,
         )
         size = min(size, self.num_timesteps)
-        indices = [i for i in range(self.num_timesteps)]
-        self.cfg["rng"].shuffle(indices)
-        indices = indices[:size]
+        # indices = [i for i in range(self.num_timesteps)]
+        # self.cfg["rng"].shuffle(indices)
+        # indices = indices[:size]
 
-        pr = pr[indices]
-        acts = acts[indices]
-        probs = probs[indices]
-        rews = rews[indices]
-        obs = obs[indices]
-        dones = dones[indices]
-        f_rews = f_rews[indices]
-        vals = vals[indices]
-        adv = adv[indices]
+        pr = pr[:size]
+        acts = acts[:size]
+        probs = probs[:size]
+        rews = rews[:size]
+        obs = obs[:size]
+        dones = dones[:size]
+        f_rews = f_rews[:size]
+        vals = vals[:size]
+        adv = adv[:size]
 
         return acts, probs, rews, obs, dones, f_rews, vals, adv, pr
 

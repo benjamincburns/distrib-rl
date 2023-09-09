@@ -1,25 +1,24 @@
 from distrib_rl.mpframework import Process
+import cProfile as profile
+import os
+import logging
+from datetime import datetime
 
 
 class ParallelShuffler(Process):
-    def __init__(self, name, loop_wait_time=None):
-        super().__init__(name, loop_wait_time)
+    def __init__(self, name):#, loop_wait_time=0.001):
+        super().__init__(name)#, loop_wait_time)
         self.cfg = None
         self.exp_manager = None
         self.server = None
         self.total_ts = 0
         self.ts_per_update = 0
-        self.sleep_fn = 0
         self.batch_size = 0
-        self.buffer = []
 
     def init(self):
         import numpy
         from distrib_rl.experience import DistribExperienceManager
         from distrib_rl.distrib import RedisServer
-        from time import sleep
-
-        self.sleep_fn = sleep
 
         self.task_checker.wait_for_initialization(header="initialization_data")
         self.cfg = self.task_checker.latest_data.copy()
@@ -58,34 +57,50 @@ class ParallelShuffler(Process):
     def update(self, header, data):
         pass
 
+    def run(self):
+        logging.basicConfig(
+            format="%(asctime)s %(levelname)s - %(processName)s:%(process)d - %(message)s",
+            level=logging.INFO
+        )
+        if os.environ.get("DISTRIB_RL_PROFILING") is not None:
+            profile.runctx(
+                statement="_run()",
+                locals={"_run": super().run},
+                globals={},
+                filename=f"profile-{datetime.now().isoformat()}-{os.getpid()}.prof",
+            )
+        else:
+            super().run()
+
     def step(self):
         pass
 
     def publish(self):
         if not self.results_publisher.is_empty():
-            self.sleep_fn(0.01)
             return
 
         publisher = self.results_publisher
-        for batch in self.buffer:
-            publisher.publish(header="experience_batch", data=batch)
 
-        buffer = []
-        ts_collected, fps = self.exp_manager.get_timesteps_as_batches(
-            self.ts_per_update, self.batch_size
-        )
+        returns = self.exp_manager.get_timesteps_as_batches(self.ts_per_update)
 
-        for batch in self.exp_manager.experience.get_all_batches_shuffled(
-            self.batch_size
-        ):
-            buffer.append(batch)
+        if returns is not None:
 
-        rew_mean = self.exp_manager.experience.reward_stats.mean[0]
-        rew_std = self.exp_manager.experience.reward_stats.std[0]
-        publisher.publish(
-            header="misc_data", data=(rew_mean, rew_std, ts_collected, fps)
-        )
-        self.buffer = buffer
+            ts_collected, fps, discarded_timesteps = returns
+
+            batches = self.exp_manager.experience.get_all_batches_shuffled(self.batch_size)
+
+            if batches:
+                self._logger.debug("publishing {} batches".format(len(batches)))
+
+                for batch in batches:
+                    publisher.publish(header="experience_batch", data=batch)
+
+                rew_mean = self.exp_manager.experience.reward_stats.mean[0]
+                rew_std = self.exp_manager.experience.reward_stats.std[0]
+
+                publisher.publish(
+                    header="misc_data", data=(rew_mean, rew_std, ts_collected, fps, discarded_timesteps)
+                )
 
     def cleanup(self):
         print("SHUTTING DOWN SHUFFLING PROCESS")
