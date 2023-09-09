@@ -4,6 +4,7 @@ from distrib_rl.distrib.message_serialization import MessageSerializer
 import time
 import pyjson5 as json
 import os
+import numpy
 
 
 class RedisClient(object):
@@ -28,8 +29,9 @@ class RedisClient(object):
         red = self.redis
         packed_data = self._message_serializer.pack(data)
 
-        red.lpush(key, packed_data)
-        red.ltrim(key, 0, self.max_queue_size)
+        pipe = red.pipeline()
+        pipe.lpush(key, packed_data)
+        pipe.execute()
 
     def set_data(self, key, data):
         if data is None:
