@@ -61,7 +61,13 @@ class ExperienceReplay(object):
 
         times.append(("serialize", time.perf_counter()))
 
-        self.reward_stats.increment(future_rewards, len(future_rewards))
+        # WelfordRunningStat is rather inefficient, so update using 1000
+        # randomly sampled rewards in the case when we have more than 1000
+        # rewards in our batch
+        if len(future_rewards) > 1000:
+            self.reward_stats.increment(np.random.choice(future_rewards, 1000), len(future_rewards))
+        else:
+            self.reward_stats.increment(future_rewards, len(future_rewards))
 
         times.append(("inc reward stats", time.perf_counter()))
 
