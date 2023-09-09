@@ -144,51 +144,14 @@ class ProcessHandler(object):
 
         results = []
         try:
-            # Here we take items off the queue for as long as the qsize function says we can.
-            while self._output_queue.qsize() > 0:
-                try:
-                    result = self._output_queue.get(block=block, timeout=timeout)
-                    # print("GOT RESULT",self._output_queue.qsize(), self._output_queue.empty())
-
-                    header, data = result()
-                    results.append((header, data))
-                    result.cleanup()
-
-                    del result
-                    failCount = 0
-                except Empty:
-                    failCount += 1
-                    if failure_sleep_time is not None and failure_sleep_time > 0:
-                        time.sleep(failure_sleep_time)
-
-                    # It appears to be the case that the empty flag in the queue object
-                    # is not related to the qsize() function, so an empty queue exception can
-                    # be thrown even when the queue is not actually empty.
-
-                    # This code can infinitely loop for some reason. qsize() can return a valid integer,
-                    # while empty() can return true for an unlimited period of time, causing get to fail indefinitely.
-                    # Whatever data remains in the queue simply cannot be
-                    # retrieved at this point, and it is left in memory until the Python interpreter is closed.
-                    if failCount >= 10:
-                        if (
-                            self._output_queue.qsize() == 0
-                            and self._output_queue.empty()
-                        ):
-                            break
-
-                        self._logger.critical(
-                            "GET_ALL FAILURE LIMIT REACHED ERROR!\n"
-                            "FAILURE COUNT: {}\n"
-                            "REMAINING QSIZE: {}\n"
-                            "QUEUE EMPTY STATUS: {}".format(
-                                failCount,
-                                self._output_queue.qsize(),
-                                self._output_queue.empty(),
-                            )
-                        )
-                        break
-                    else:
-                        continue
+            self._output_queue.put('STOP')
+            for item in iter(self._output_queue.get_nowait, 'STOP'):
+                results.append(item())
+                item.cleanup()
+                del item
+        except FileNotFoundError:
+            # happens if the child process exits while we are trying to get data from it.
+            pass
         except Exception:
             error = traceback.format_exc()
             self._logger.critical("GET_ALL ERROR!\n{}".format(error))
@@ -280,8 +243,14 @@ class ProcessHandler(object):
             return True
         return False
 
-    def _join_process(self):
-        self._process.join(timeout=5)
+    def _join_process(self, timeout=10):
         while self.is_alive():
-            self._process.terminate()
-            self._process.join(timeout=5)
+            self._logger.debug(f"Waiting {timeout} seconds for process {self._process.name}-{self._process.pid} to close.")
+            self._process.join(timeout=timeout)
+
+            if (self.is_alive()):
+                self._logger.debug(f"Terminating process {self._process.name}-{self._process.pid}")
+                self._process.terminate()
+
+        self._logger.debug(f"Process {self._process.name}-{self._process.pid} ended.")
+
