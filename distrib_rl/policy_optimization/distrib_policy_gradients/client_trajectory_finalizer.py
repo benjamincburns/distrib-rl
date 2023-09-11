@@ -142,9 +142,6 @@ class ClientTrajectoryFinalizer(Process):
         if self.t0 is None:
             self.t0 = time.perf_counter()
 
-        if trajectory.zero_reward:
-            return
-
         values = (
             self.value_estimator.get_output(
                 np.asarray(trajectory.obs + [trajectory.final_obs])

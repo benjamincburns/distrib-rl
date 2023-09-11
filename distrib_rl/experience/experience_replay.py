@@ -65,7 +65,7 @@ class ExperienceReplay(object):
         # randomly sampled rewards in the case when we have more than 1000
         # rewards in our batch
         if len(future_rewards) > 1000:
-            self.reward_stats.increment(np.random.choice(future_rewards, 1000), len(future_rewards))
+            self.reward_stats.increment(np.random.choice(future_rewards, 1000), 1000)
         else:
             self.reward_stats.increment(future_rewards, len(future_rewards))
 
