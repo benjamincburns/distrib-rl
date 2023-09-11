@@ -2,6 +2,7 @@ from distrib_rl.experience import ExperienceReplay
 import numpy as np
 import time
 
+
 class DistribExperienceManager(object):
     def __init__(self, cfg, client=None, server=None):
         self.cfg = cfg
@@ -89,7 +90,9 @@ class DistribExperienceManager(object):
         for i, t in enumerate(times):
             if i == 0:
                 continue
-            print(f"DistribExperienceManager.get_timesteps_as_batches, {t[0]}: {t[1]-prev_time}")
+            print(
+                f"DistribExperienceManager.get_timesteps_as_batches, {t[0]}: {t[1]-prev_time}"
+            )
             prev_time = t[1]
 
         return n_collected, self.server.steps_per_second, discarded_timesteps

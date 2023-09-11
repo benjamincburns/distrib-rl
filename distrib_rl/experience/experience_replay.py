@@ -29,7 +29,7 @@ class ExperienceReplay(object):
         self.time = 0
 
     def register_trajectory(self, trajectory: Trajectory, serialized=False):
-        times = [ ("start", time.perf_counter()) ]
+        times = [("start", time.perf_counter())]
         if not serialized:
             (
                 actions,
@@ -72,7 +72,7 @@ class ExperienceReplay(object):
         times.append(("inc reward stats", time.perf_counter()))
 
         self.actions = torch.cat(
-            (self.actions, torch.as_tensor(actions,dtype=torch.float32)), 0
+            (self.actions, torch.as_tensor(actions, dtype=torch.float32)), 0
         )
 
         times.append(("concatenate actions", time.perf_counter()))
@@ -133,7 +133,9 @@ class ExperienceReplay(object):
             for i, t in enumerate(times):
                 if i == 0:
                     continue
-                print(f"ExperienceReplay.get_all_batches_shuffled (batch_size == num_timesteps), {t[0]}: {t[1]-prev_time}")
+                print(
+                    f"ExperienceReplay.get_all_batches_shuffled (batch_size == num_timesteps), {t[0]}: {t[1]-prev_time}"
+                )
                 prev_time = t[1]
             return batches
 
@@ -184,7 +186,9 @@ class ExperienceReplay(object):
         for i, t in enumerate(times):
             if i == 0:
                 continue
-            print(f"ExperienceReplay.get_all_batches_shuffled, {t[0]}: {t[1]-prev_time}")
+            print(
+                f"ExperienceReplay.get_all_batches_shuffled, {t[0]}: {t[1]-prev_time}"
+            )
             prev_time = t[1]
 
         return batches

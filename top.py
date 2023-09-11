@@ -1,8 +1,11 @@
 import random
+
 random.seed(0)
 import numpy as np
+
 np.random.seed(0)
 import torch
+
 torch.manual_seed(0)
 
 from distrib_rl.utils import training_replay, config_loader
@@ -15,9 +18,9 @@ def main():
     np.random.seed(cfg["seed"])
     random.seed(cfg["seed"])
 
-    #opt = PolicyGradients(cfg)
-    #opt = SB3Optimizer(cfg)
-    #opt.train()
+    # opt = PolicyGradients(cfg)
+    # opt = SB3Optimizer(cfg)
+    # opt.train()
 
     training_replay.run()
 

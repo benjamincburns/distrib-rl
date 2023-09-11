@@ -60,7 +60,6 @@ class TaskChecker(object):
 
         # While we have no available data.
         while self.latest_data is None:
-
             # Check for new data.
             self.check_for_update()
 
@@ -84,7 +83,6 @@ class TaskChecker(object):
         newData = False
 
         if not self._input_queue.empty():
-
             # Get the next data packet, should be MPFDataPacket object.
             data_packet = self._input_queue.get_nowait()
             header, data = data_packet()

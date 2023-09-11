@@ -64,7 +64,6 @@ class PPO(object):
 
                 value_loss = val_loss_fn(vals, target_values)
                 if self.n_epochs >= self.burn_in:
-
                     log_probs, entropy = policy.get_backprop_data(obs, acts)
 
                     ratio = torch.exp(log_probs - old_probs)

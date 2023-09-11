@@ -34,7 +34,7 @@ class ParallelExperienceManager(object):
                         self.rew_std,
                         ts_collected,
                         self.steps_per_second,
-                        ts_discarded
+                        ts_discarded,
                     ) = msg
                     self.ts_collected += ts_collected
                     self.ts_discarded += ts_discarded

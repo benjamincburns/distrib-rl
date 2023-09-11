@@ -144,8 +144,8 @@ class ProcessHandler(object):
 
         results = []
         try:
-            self._output_queue.put('STOP')
-            for item in iter(self._output_queue.get_nowait, 'STOP'):
+            self._output_queue.put("STOP")
+            for item in iter(self._output_queue.get_nowait, "STOP"):
                 results.append(item())
                 item.cleanup()
                 del item
@@ -245,12 +245,15 @@ class ProcessHandler(object):
 
     def _join_process(self, timeout=10):
         while self.is_alive():
-            self._logger.debug(f"Waiting {timeout} seconds for process {self._process.name}-{self._process.pid} to close.")
+            self._logger.debug(
+                f"Waiting {timeout} seconds for process {self._process.name}-{self._process.pid} to close."
+            )
             self._process.join(timeout=timeout)
 
-            if (self.is_alive()):
-                self._logger.debug(f"Terminating process {self._process.name}-{self._process.pid}")
+            if self.is_alive():
+                self._logger.debug(
+                    f"Terminating process {self._process.name}-{self._process.pid}"
+                )
                 self._process.terminate()
 
         self._logger.debug(f"Process {self._process.name}-{self._process.pid} ended.")
-

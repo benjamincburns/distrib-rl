@@ -1,22 +1,30 @@
-import os,sys
+import os, sys
 import random
+
 random.seed(0)
 import numpy as np
+
 np.random.seed(0)
 import torch
+
 torch.manual_seed(0)
 
 from distrib_rl.policy_optimization.distrib_policy_gradients import Server
 from distrib_rl.experiments import ExperimentManager
 import traceback
 
+
 def main():
     if len(sys.argv) == 1:
-        experiment_path = "resources/experiments/test_experiments/basic_test_experiment.json"
+        experiment_path = (
+            "resources/experiments/test_experiments/basic_test_experiment.json"
+        )
     if len(sys.argv) == 2:
         experiment_path = sys.argv[1]
         if not os.path.exists(experiment_path):
-            raise FileNotFoundError(f"No experiment file found at location '{experiment_path}'")
+            raise FileNotFoundError(
+                f"No experiment file found at location '{experiment_path}'"
+            )
 
     server = Server()
     experiment_manager = ExperimentManager(server)
@@ -31,8 +39,11 @@ def main():
         try:
             server.cleanup()
         except:
-            print("\n!!!CRITICAL FAILURE!!!\nUNABLE TO SET REDIS STATE TO STOPPING AFTER EXCEPTION IN CLIENT\n")
+            print(
+                "\n!!!CRITICAL FAILURE!!!\nUNABLE TO SET REDIS STATE TO STOPPING AFTER EXCEPTION IN CLIENT\n"
+            )
             print(traceback.format_exc())
+
 
 if __name__ == "__main__":
     main()

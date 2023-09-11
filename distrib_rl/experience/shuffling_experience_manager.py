@@ -5,6 +5,7 @@ from distrib_rl.experience.distrib_experience_manager import DistribExperienceMa
 
 import numpy as np
 
+
 class ShufflingExperienceManager(object):
     def __init__(self, server: RedisServer, cfg: Dict[str, Any]):
         self.cfg = cfg
@@ -19,10 +20,14 @@ class ShufflingExperienceManager(object):
         self.steps_per_second = 0
 
         if "updates_per_timestep" in self.cfg["policy_optimizer"]:
-            self.ts_per_update = 1 / self.cfg["policy_optimizer"]["updates_per_timestep"]
+            self.ts_per_update = (
+                1 / self.cfg["policy_optimizer"]["updates_per_timestep"]
+            )
 
             if self.ts_per_update > self.cfg["policy_optimizer"]["batch_size"]:
-                raise Exception("1 / updates_per_timestep must be smaller than batch_size")
+                raise Exception(
+                    "1 / updates_per_timestep must be smaller than batch_size"
+                )
 
         elif "timesteps_per_update" in self.cfg["policy_optimizer"]:
             self.ts_per_update = self.cfg["policy_optimizer"]["timesteps_per_update"]
@@ -31,15 +36,19 @@ class ShufflingExperienceManager(object):
                 raise Exception("timesteps_per_update must be smaller than batch_size")
 
         else:
-            self.ts_per_update = int(round(self.cfg["policy_optimizer"]["new_returns_proportion"] * self.cfg["experience_replay"]["max_buffer_size"]))
+            self.ts_per_update = int(
+                round(
+                    self.cfg["policy_optimizer"]["new_returns_proportion"]
+                    * self.cfg["experience_replay"]["max_buffer_size"]
+                )
+            )
 
         self.batch_size = self.cfg["policy_optimizer"]["batch_size"]
 
         self.exp_manager = DistribExperienceManager(self.cfg, server=self.server)
 
-
     def get_all_batches_shuffled(self):
-        times = [ ("start", time.perf_counter()) ]
+        times = [("start", time.perf_counter())]
         self.ts_collected = 0
         self.ts_discarded = 0
 
@@ -50,14 +59,16 @@ class ShufflingExperienceManager(object):
         while returns is None:
             before = time.perf_counter()
             available_steps = self.exp_manager.server.available_timesteps
-            if len(step_availability) == 0 or available_steps > step_availability[-1][1]:
+            if (
+                len(step_availability) == 0
+                or available_steps > step_availability[-1][1]
+            ):
                 step_availability.append((before - times[0][1], available_steps))
 
             returns = self.exp_manager.get_timesteps_as_batches(self.ts_per_update)
             after = time.perf_counter()
             if returns is None:
                 polling_times.append(after - before)
-
 
         times.append(("wasted polls", before))
         times.append(("returns retrieved", time.perf_counter()))
@@ -77,7 +88,9 @@ class ShufflingExperienceManager(object):
         for i, t in enumerate(times):
             if i == 0:
                 continue
-            print(f"ShufflingExperienceManager.get_all_batches_shuffled, {t[0]}: {t[1]-prev_time}")
+            print(
+                f"ShufflingExperienceManager.get_all_batches_shuffled, {t[0]}: {t[1]-prev_time}"
+            )
             prev_time = t[1]
 
         polling_times = np.array(polling_times)
@@ -86,13 +99,23 @@ class ShufflingExperienceManager(object):
         polling_time_max = np.max(polling_times) if len(polling_times) else 0
         polling_time_min = np.min(polling_times) if len(polling_times) else 0
 
-        print(f"ShufflingExperienceManager.get_all_batches_shuffled, polling time mean: {polling_time_mean}")
-        print(f"ShufflingExperienceManager.get_all_batches_shuffled, polling time std: {polling_time_std}")
-        print(f"ShufflingExperienceManager.get_all_batches_shuffled, polling time max: {polling_time_max}")
-        print(f"ShufflingExperienceManager.get_all_batches_shuffled, polling time min: {polling_time_min}")
-        print(f"ShufflingExperienceManager.get_all_batches_shuffled, poll count: {len(polling_times)}")
+        print(
+            f"ShufflingExperienceManager.get_all_batches_shuffled, polling time mean: {polling_time_mean}"
+        )
+        print(
+            f"ShufflingExperienceManager.get_all_batches_shuffled, polling time std: {polling_time_std}"
+        )
+        print(
+            f"ShufflingExperienceManager.get_all_batches_shuffled, polling time max: {polling_time_max}"
+        )
+        print(
+            f"ShufflingExperienceManager.get_all_batches_shuffled, polling time min: {polling_time_min}"
+        )
+        print(
+            f"ShufflingExperienceManager.get_all_batches_shuffled, poll count: {len(polling_times)}"
+        )
         print()
-        #print(f"ShufflingExperienceManager.get_all_batches_shuffled, step availability: {', '.join([str(a) for a in step_availability])}")
+        # print(f"ShufflingExperienceManager.get_all_batches_shuffled, step availability: {', '.join([str(a) for a in step_availability])}")
 
         return batches
 
@@ -102,6 +125,3 @@ class ShufflingExperienceManager(object):
 
         if self.cfg is not None:
             self.cfg.clear()
-
-
-

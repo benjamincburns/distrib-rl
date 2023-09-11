@@ -24,7 +24,6 @@ class ExponentialLearningRateController(object):
         lr_report = 0
         if mean_clip > clip_target:
             if hasattr(optimizer, "torch_optimizer"):
-
                 for group in optimizer.torch_optimizer.param_groups:
                     if "lr" in group.keys():
                         group["lr"] /= rate

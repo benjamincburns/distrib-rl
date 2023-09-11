@@ -20,7 +20,6 @@ torch.manual_seed(0)
 
 
 def build_env(cfg, existing_env=None):
-
     _register_custom_envs(cfg)
 
     if existing_env is None:

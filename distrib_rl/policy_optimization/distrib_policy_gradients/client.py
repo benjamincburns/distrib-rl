@@ -74,7 +74,6 @@ class Client(object):
             or server_status_flag == RedisServer.INITIALIZING_STATUS
             or server_status_flag == RedisServer.STOPPING_STATUS
         ):
-
             self.reconfigure()
         elif server_status_flag == RedisServer.AWAITING_ENV_SPACES_STATUS:
             self.transmit_env_spaces()

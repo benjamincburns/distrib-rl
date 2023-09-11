@@ -56,7 +56,11 @@ class RedisServer(object):
 
         while n_collected < n:
             if len(self.internal_buffer) == 0 and (n_collected < n):
-                self._logger.debug("Buffer empty, but still need to collect {} more timesteps.".format(n - n_collected))
+                self._logger.debug(
+                    "Buffer empty, but still need to collect {} more timesteps.".format(
+                        n - n_collected
+                    )
+                )
 
             ret = self.internal_buffer.pop(-1)
             trajectory, num_timesteps, policy_epoch = ret
@@ -91,12 +95,18 @@ class RedisServer(object):
         # atomic_pop_all returns all entries for a given key as a list, giving
         # us a list of lists of reward scalars. We need to flatten it before we
         # return.
-        reward_lists = self._atomic_pop(redis_keys.CLIENT_POLICY_REWARD_KEY, self.max_queue_size)
+        reward_lists = self._atomic_pop(
+            redis_keys.CLIENT_POLICY_REWARD_KEY, self.max_queue_size
+        )
 
         # Actual flattening happens here. Not very readable, but it's supposedly
         # the fastest way to flatten a list[list[Any]], per
         # https://stackoverflow.com/a/952952
-        return [reward for reward_list in reward_lists for reward in self._message_serializer.unpack(reward_list)]
+        return [
+            reward
+            for reward_list in reward_lists
+            for reward in self._message_serializer.unpack(reward_list)
+        ]
 
     def push_update(
         self,
@@ -180,7 +190,10 @@ class RedisServer(object):
         for packed_trajectories in returns:
             trajectories = self._message_serializer.unpack(packed_trajectories)
             for serialized_trajectory, policy_epoch in trajectories:
-                if abs(self.current_epoch - policy_epoch) <= self.max_policy_age and self.available_timesteps < self.max_queue_size:
+                if (
+                    abs(self.current_epoch - policy_epoch) <= self.max_policy_age
+                    and self.available_timesteps < self.max_queue_size
+                ):
                     n_timesteps = len(serialized_trajectory[0])
                     self.available_timesteps += n_timesteps
                     collected_timesteps += n_timesteps
@@ -195,7 +208,9 @@ class RedisServer(object):
                 break
 
         if self.discarded_timesteps - discarded_timesteps > 0:
-            self._logger.debug(f"Discarded {self.discarded_timesteps - discarded_timesteps} old or excess timesteps")
+            self._logger.debug(
+                f"Discarded {self.discarded_timesteps - discarded_timesteps} old or excess timesteps"
+            )
 
         self._update_sps(collected_timesteps)
         self._trim_buffer()
@@ -211,7 +226,9 @@ class RedisServer(object):
                 self.internal_buffer.remove(item)
 
         if self.discarded_timesteps - discarded > 0:
-            self._logger.debug(f"Discarded {self.discarded_timesteps - discarded} old timesteps")
+            self._logger.debug(
+                f"Discarded {self.discarded_timesteps - discarded} old timesteps"
+            )
 
         discarded = self.discarded_timesteps
 
@@ -224,8 +241,9 @@ class RedisServer(object):
             del ret
 
         if self.discarded_timesteps - discarded > 0:
-            self._logger.debug(f"Discarded {self.discarded_timesteps - discarded} extra timesteps")
-
+            self._logger.debug(
+                f"Discarded {self.discarded_timesteps - discarded} extra timesteps"
+            )
 
     def _update_sps(self, collected_timesteps):
         self.accumulated_sps += collected_timesteps

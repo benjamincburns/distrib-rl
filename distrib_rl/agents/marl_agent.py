@@ -74,13 +74,12 @@ class MARLAgent(object):
 
             cumulative_timesteps += 1
             if done:
-
                 self.ep_rewards.append(self.current_ep_rew / agents_to_save)
                 self.current_ep_rew = 0
 
                 for i in range(agents_to_save):
                     trajectories[i].final_obs = next_obs[i]
-                    experience_trajectories  += 1
+                    experience_trajectories += 1
                     yield trajectories[i]
 
                 # todo: Implement a proper opponent evaluation & selection scheme and delete this.
@@ -103,10 +102,8 @@ class MARLAgent(object):
             obs = next_obs
             if (
                 (num_timesteps is not None and cumulative_timesteps >= num_timesteps)
-                or
-                (num_seconds is not None and time.time() - start_time >= num_seconds)
-                or
-                (num_eps is not None and experience_trajectories >= num_eps)
+                or (num_seconds is not None and time.time() - start_time >= num_seconds)
+                or (num_eps is not None and experience_trajectories >= num_eps)
             ):
                 break
 

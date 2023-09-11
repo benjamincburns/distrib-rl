@@ -71,19 +71,28 @@ class Server(object):
         elapsed_process_time = current_process_time - self.last_process_measure_time
 
         if self.epoch_info["ts_consumed"] > 0:
-            current_ts = float(self.server.redis.get(redis_keys.SERVER_CUMULATIVE_TIMESTEPS_KEY))
+            current_ts = float(
+                self.server.redis.get(redis_keys.SERVER_CUMULATIVE_TIMESTEPS_KEY)
+            )
 
             produced_sps = (current_ts - self.last_measured_ts) / elapsed_time
             consumed_sps = self.epoch_info["ts_consumed"] / elapsed_time
 
             self.last_measured_ts = current_ts
 
-            if self.worker_produced_steps_per_second is None or os.environ.get("NO_SPS_EMA") is not None:
+            if (
+                self.worker_produced_steps_per_second is None
+                or os.environ.get("NO_SPS_EMA") is not None
+            ):
                 self.worker_produced_steps_per_second = produced_sps
                 self.consumed_steps_per_second = consumed_sps
             else:
-                self.worker_produced_steps_per_second = self.worker_produced_steps_per_second*0.9 + produced_sps*0.1
-                self.consumed_steps_per_second = self.consumed_steps_per_second*0.9 + consumed_sps*0.1
+                self.worker_produced_steps_per_second = (
+                    self.worker_produced_steps_per_second * 0.9 + produced_sps * 0.1
+                )
+                self.consumed_steps_per_second = (
+                    self.consumed_steps_per_second * 0.9 + consumed_sps * 0.1
+                )
 
             self.server.redis.set(
                 redis_keys.RUNNING_REWARD_MEAN_KEY, float(self.exp_manager.rew_mean)
@@ -91,8 +100,12 @@ class Server(object):
             self.server.redis.set(
                 redis_keys.RUNNING_REWARD_STD_KEY, float(self.exp_manager.rew_std)
             )
-            self.epoch_info["worker_produced_steps_per_second"] = int(round(self.worker_produced_steps_per_second))
-            self.epoch_info["consumed_steps_per_second"] = int(round(self.consumed_steps_per_second))
+            self.epoch_info["worker_produced_steps_per_second"] = int(
+                round(self.worker_produced_steps_per_second)
+            )
+            self.epoch_info["consumed_steps_per_second"] = int(
+                round(self.consumed_steps_per_second)
+            )
             self.epoch_info["epoch_time"] = elapsed_time
             self.epoch_info["process_sleep_time"] = elapsed_time - elapsed_process_time
 
@@ -184,7 +197,9 @@ class Server(object):
         )
 
     def load_weights(self, load_dir, load_epoch):
-        self._logger.info(f"LOADING WEIGHTS FROM EPOCH {load_epoch} OF RUN AT PATH {load_dir}")
+        self._logger.info(
+            f"LOADING WEIGHTS FROM EPOCH {load_epoch} OF RUN AT PATH {load_dir}"
+        )
         models_dir = os.path.join(load_dir, "models")
         optim_dir = os.path.join(load_dir, "grad_optimizer")
 
@@ -248,7 +263,9 @@ class Server(object):
         self.server.redis.set(
             redis_keys.SERVER_CURRENT_STATUS_KEY, RedisServer.RESET_STATUS
         )
-        self._logger.info("WAITING 2 SECONDS FOR ALL CLIENTS TO CATCH UP ON RESET SIGNAL")
+        self._logger.info(
+            "WAITING 2 SECONDS FOR ALL CLIENTS TO CATCH UP ON RESET SIGNAL"
+        )
         time.sleep(2)
         self.cleanup()
 
@@ -257,7 +274,9 @@ class Server(object):
         self.server.redis.set(
             redis_keys.SERVER_CURRENT_STATUS_KEY, RedisServer.RECONFIGURE_STATUS
         )
-        self._logger.info("WAITING 2 SECONDS FOR ALL CLIENTS TO CATCH UP ON RECONFIGURE SIGNAL")
+        self._logger.info(
+            "WAITING 2 SECONDS FOR ALL CLIENTS TO CATCH UP ON RECONFIGURE SIGNAL"
+        )
         time.sleep(2)
         self.cleanup()
 

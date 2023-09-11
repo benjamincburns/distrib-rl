@@ -6,8 +6,8 @@ from datetime import datetime
 
 
 class ParallelShuffler(Process):
-    def __init__(self, name):#, loop_wait_time=0.001):
-        super().__init__(name)#, loop_wait_time)
+    def __init__(self, name):  # , loop_wait_time=0.001):
+        super().__init__(name)  # , loop_wait_time)
         self.cfg = None
         self.exp_manager = None
         self.server = None
@@ -28,7 +28,6 @@ class ParallelShuffler(Process):
         self.exp_manager = DistribExperienceManager(self.cfg, server=self.server)
 
         if "updates_per_timestep" in self.cfg["policy_optimizer"]:
-
             self.ts_per_update = (
                 1 / self.cfg["policy_optimizer"]["updates_per_timestep"]
             )
@@ -39,7 +38,6 @@ class ParallelShuffler(Process):
                 )
 
         elif "timesteps_per_update" in self.cfg["policy_optimizer"]:
-
             self.ts_per_update = self.cfg["policy_optimizer"]["timesteps_per_update"]
 
             if self.ts_per_update > self.cfg["policy_optimizer"]["batch_size"]:
@@ -60,7 +58,7 @@ class ParallelShuffler(Process):
     def run(self):
         logging.basicConfig(
             format="%(asctime)s %(levelname)s - %(processName)s:%(process)d - %(message)s",
-            level=logging.INFO
+            level=logging.INFO,
         )
         if os.environ.get("DISTRIB_RL_PROFILING") is not None:
             profile.runctx(
@@ -84,10 +82,11 @@ class ParallelShuffler(Process):
         returns = self.exp_manager.get_timesteps_as_batches(self.ts_per_update)
 
         if returns is not None:
-
             ts_collected, fps, discarded_timesteps = returns
 
-            batches = self.exp_manager.experience.get_all_batches_shuffled(self.batch_size)
+            batches = self.exp_manager.experience.get_all_batches_shuffled(
+                self.batch_size
+            )
 
             if batches:
                 self._logger.debug("publishing {} batches".format(len(batches)))
@@ -99,7 +98,8 @@ class ParallelShuffler(Process):
                 rew_std = self.exp_manager.experience.reward_stats.std[0]
 
                 publisher.publish(
-                    header="misc_data", data=(rew_mean, rew_std, ts_collected, fps, discarded_timesteps)
+                    header="misc_data",
+                    data=(rew_mean, rew_std, ts_collected, fps, discarded_timesteps),
                 )
 
     def cleanup(self):

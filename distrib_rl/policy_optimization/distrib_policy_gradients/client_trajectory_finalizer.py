@@ -15,7 +15,9 @@ class ClientTrajectoryFinalizer(Process):
 
     def __init__(self, loop_wait_period=0.01):
         super().__init__(
-            "ClientTrajectoryFinalizer", loop_wait_period=loop_wait_period, process_all_updates=True
+            "ClientTrajectoryFinalizer",
+            loop_wait_period=loop_wait_period,
+            process_all_updates=True,
         )
         self.client = None
         self.cfg = None
